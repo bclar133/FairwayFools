@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+  <meta name="theme-color" content="#123c2d">
+  <title>Fairway Fools</title>
+  <meta name="description" content="A colourful top-down 18-hole golf game with random courses, wind and four wonderfully odd golfers.">
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23123c2d'/%3E%3Cpath d='M20 55V10h4v45' stroke='%23fff' stroke-width='3'/%3E%3Cpath d='M24 11l26 8-26 9z' fill='%23f5c64d'/%3E%3Ccircle cx='39' cy='49' r='6' fill='white'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <main id="app">
+    <section id="setup" class="screen setup-screen">
+      <header class="masthead">
+        <div class="flag-mark"><span></span></div>
+        <div><p class="eyebrow">18 holes. Questionable talent.</p><h1>FAIRWAY <em>FOOLS</em></h1></div>
+      </header>
+
+      <div class="setup-grid">
+        <section class="panel golfers-panel">
+          <div class="section-title"><span>1</span><h2>Choose your golfer</h2></div>
+          <div id="golferGrid" class="golfer-grid" role="radiogroup" aria-label="Choose your golfer"></div>
+        </section>
+
+        <section class="panel course-panel">
+          <div class="section-title"><span>2</span><h2>Pick the course</h2></div>
+          <div id="difficultyGrid" class="difficulty-grid" role="radiogroup" aria-label="Choose course difficulty"></div>
+          <div class="course-preview" aria-hidden="true">
+            <div class="preview-hole"><i class="preview-tee"></i><i class="preview-fairway"></i><i class="preview-green"></i><i class="preview-water"></i><i class="preview-sand one"></i><i class="preview-sand two"></i><i class="preview-flag"></i></div>
+            <div><strong>Fresh course every round</strong><p>18 playable holes generated from balanced par, distance and hazard rules.</p></div>
+          </div>
+          <button id="startBtn" class="primary-btn">TEE OFF <span>→</span></button>
+        </section>
+      </div>
+      <footer><span>Desktop: mouse or ← → + Space</span><span>Phone: aim buttons + SWING</span></footer>
+    </section>
+
+    <section id="game" class="screen game-screen hidden">
+      <header class="game-topbar">
+        <button id="menuBtn" class="icon-btn" aria-label="Return to menu">☰</button>
+        <div class="hole-heading"><span id="holeLabel">HOLE 1</span><strong id="parLabel">PAR 4</strong><small id="yardLabel">386 YDS</small></div>
+        <div class="round-score"><small>ROUND</small><strong id="roundScore">E</strong></div>
+        <div class="wind"><span id="windArrow">➤</span><div><small>WIND</small><strong id="windLabel">7 mph</strong></div></div>
+      </header>
+
+      <div class="play-layout">
+        <div id="canvasWrap" class="canvas-wrap">
+          <canvas id="course" width="960" height="640" aria-label="Top-down golf course"></canvas>
+          <div id="lieBadge" class="lie-badge">TEE</div>
+          <div id="toast" class="toast" aria-live="polite"></div>
+        </div>
+
+        <aside class="hud">
+          <div class="player-mini"><div id="miniPortrait" class="mini-portrait"></div><div><small id="golferRole">BALANCED</small><strong id="golferName">Norm Alround</strong></div><b id="shotCount">1</b></div>
+          <div class="club-row"><button id="clubDown" aria-label="Previous club">‹</button><div><small>CLUB</small><strong id="clubLabel">DRIVER</strong><span id="distanceLabel">245 yds</span></div><button id="clubUp" aria-label="Next club">›</button></div>
+          <div class="aim-row"><button id="aimLeft" aria-label="Aim left">↶</button><div><small>AIM</small><strong id="aimDegrees">0°</strong></div><button id="aimRight" aria-label="Aim right">↷</button></div>
+          <div class="meters">
+            <label>POWER <output id="powerValue">0%</output></label><div class="meter power"><i id="powerFill"></i><span class="sweet"></span></div>
+            <label>ACCURACY <output id="accuracyValue">READY</output></label><div class="meter accuracy"><i id="accuracyNeedle"></i><span class="perfect-zone"></span></div>
+          </div>
+          <button id="swingBtn" class="swing-btn"><span id="swingMain">SWING</span><small id="swingHint">Tap to start power</small></button>
+          <p class="controls-note">Tap once for power, again to lock it, then once more for accuracy.</p>
+        </aside>
+      </div>
+    </section>
+
+    <dialog id="scoreDialog" class="score-dialog">
+      <div class="score-head"><div><small id="scoreKicker">AFTER HOLE 1</small><h2 id="scoreTitle">Nice par!</h2></div><strong id="scoreTotal">E</strong></div>
+      <div class="score-scroll"><table><thead><tr id="scoreHoles"></tr></thead><tbody><tr id="scorePars"></tr><tr id="scoreScores"></tr></tbody></table></div>
+      <div class="score-legend"><span><i class="eagle"></i>Eagle</span><span><i class="birdie"></i>Birdie</span><span><i class="par"></i>Par</span><span><i class="bogey"></i>Bogey+</span></div>
+      <button id="nextHoleBtn" class="primary-btn">NEXT HOLE <span>→</span></button>
+    </dialog>
+  </main>
+  <script src="game.js"></script>
+</body>
+</html>
