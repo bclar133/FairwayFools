@@ -1,6 +1,7 @@
 const $=s=>document.querySelector(s);
 const canvas=$('#course'),ctx=canvas.getContext('2d');
 const golferImg=new Image(); golferImg.src='assets/golfers.webp';
+const portraitFiles=['portrait-barry.webp','portrait-chip.webp','portrait-sandy.webp','portrait-norm.webp'];
 const golfers=[
  {name:'Barry Bigstick',role:'BIG HITTER',color:'#e74738',stats:{power:5,accuracy:2,short:2},desc:'Bombs away. Directions optional.'},
  {name:'Chip McGee',role:'APPROACH ACE',color:'#e7ae22',stats:{power:3,accuracy:5,short:3},desc:'Finds flags like a homing pigeon.'},
@@ -12,7 +13,7 @@ const clubs=[['Driver',245],['3 Wood',215],['4 Iron',180],['6 Iron',155],['8 Iro
 let selectedGolfer=3,selectedDifficulty='medium',course=[],holeIndex=0,strokes=0,scores=[],ball={x:480,y:585},aim=0,club=0,phase='ready',power=0,accuracy=0,meterDir=1,animFrame,lastTime=0,hole,lie='TEE',shotAnimating=false;
 
 function renderSetup(){
- $('#golferGrid').innerHTML=golfers.map((g,i)=>`<button class="golfer-card ${i===selectedGolfer?'selected':''}" role="radio" aria-checked="${i===selectedGolfer}" data-golfer="${i}"><div class="portrait" style="background-position-x:${i*33.333}%"></div><div class="golfer-info"><small>${g.role}</small><h3>${g.name}</h3>${statRow('POWER',g.stats.power)}${statRow('CONTROL',g.stats.accuracy)}${statRow('SHORT',g.stats.short)}</div></button>`).join('');
+ $('#golferGrid').innerHTML=golfers.map((g,i)=>`<button class="golfer-card ${i===selectedGolfer?'selected':''}" role="radio" aria-checked="${i===selectedGolfer}" data-golfer="${i}"><div class="portrait" style="background-image:url('assets/${portraitFiles[i]}')"></div><div class="golfer-info"><small>${g.role}</small><h3>${g.name}</h3>${statRow('POWER',g.stats.power)}${statRow('CONTROL',g.stats.accuracy)}${statRow('SHORT',g.stats.short)}</div></button>`).join('');
  $('#difficultyGrid').innerHTML=Object.entries(difficulties).map(([k,d])=>`<button class="difficulty ${k===selectedDifficulty?'selected':''}" role="radio" aria-checked="${k===selectedDifficulty}" data-difficulty="${k}">${d.label}<small>${d.sub}</small></button>`).join('');
 }
 function statRow(label,n){return `<div class="stat"><span>${label}</span><span class="pips">${[1,2,3,4,5].map(v=>`<i class="${v<=n?'on':''}"></i>`).join('')}</span></div>`}
@@ -39,7 +40,7 @@ function generateCourse(){
   return {number:i+1,par,length,green,tee,centers,fairWidth,bunkers,waters,trees,wind:{speed:Math.round(rand(2,13)*d.wind),angle:rand(0,Math.PI*2)},slope:{strength:rand(.2,1)*d.slope,angle:rand(0,Math.PI*2)}};
  });
 }
-function startRound(){course=generateCourse();scores=[];holeIndex=0;$('#setup').classList.add('hidden');$('#game').classList.remove('hidden');const g=golfers[selectedGolfer];$('#golferName').textContent=g.name;$('#golferRole').textContent=g.role;$('#miniPortrait').style.backgroundPositionX=`${selectedGolfer*33.333}%`;loadHole()}
+function startRound(){course=generateCourse();scores=[];holeIndex=0;$('#setup').classList.add('hidden');$('#game').classList.remove('hidden');const g=golfers[selectedGolfer];$('#golferName').textContent=g.name;$('#golferRole').textContent=g.role;$('#miniPortrait').style.backgroundImage=`url('assets/${portraitFiles[selectedGolfer]}')`;loadHole()}
 function loadHole(){hole=course[holeIndex];ball={...hole.tee};strokes=0;lie='TEE';aim=Math.atan2(hole.green.x-ball.x,ball.y-hole.green.y);club=hole.par===3?3:0;phase='ready';power=0;accuracy=0;updateHUD();draw()}
 function updateHUD(){
  $('#holeLabel').textContent=`HOLE ${holeIndex+1}`;$('#parLabel').textContent=`PAR ${hole.par}`;$('#yardLabel').textContent=`${hole.length} YDS`;$('#shotCount').textContent=strokes+1;$('#lieBadge').textContent=lie;
