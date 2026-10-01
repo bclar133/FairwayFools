@@ -67,9 +67,15 @@
     </section>
 
     <dialog id="scoreDialog" class="score-dialog">
+      <div id="celebrationConfetti" class="celebration-confetti" aria-hidden="true"></div>
       <div class="score-head"><div><small id="scoreKicker">AFTER HOLE 1</small><h2 id="scoreTitle">Nice par!</h2></div><strong id="scoreTotal">E</strong></div>
+      <div id="roundCelebration" class="round-celebration hidden" role="status">
+        <span aria-hidden="true">★ ⛳ ★</span>
+        <strong>BIRDIE BLITZ!</strong>
+        <small>Every hole finished birdie or better.</small>
+      </div>
       <div class="score-scroll"><table><thead><tr id="scoreHoles"></tr></thead><tbody><tr id="scorePars"></tr><tr id="scoreScores"></tr></tbody></table></div>
-      <div class="score-legend"><span><i class="eagle"></i>Eagle</span><span><i class="birdie"></i>Birdie</span><span><i class="par"></i>Par</span><span><i class="bogey"></i>Bogey+</span></div>
+      <div class="score-legend"><span><i class="albatross"></i>Albatross</span><span><i class="eagle"></i>Eagle</span><span><i class="birdie"></i>Birdie</span><span><i class="par"></i>Par</span><span><i class="bogey"></i>Bogey+</span></div>
       <button id="nextHoleBtn" class="primary-btn">NEXT HOLE <span>→</span></button>
     </dialog>
   </main>

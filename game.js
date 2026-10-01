@@ -95,6 +95,12 @@ function playResultSound(relative){
  else if(relative===0){for(let i=0;i<5;i++)noise(now+i*.15,.07,.12,1300)}
  else{noise(now,.55,.045,600);tone(330,now,.65,'sine',.07,185);tone(247,now+.08,.58,'sine',.045,165)}
 }
+function playPerfectRoundSound(){
+ const a=getAudio();if(!a)return;const now=a.currentTime+.18;
+ noise(now,2.4,.18,2600);
+ [523,659,784,1047,1319,1568].forEach((f,i)=>tone(f,now+i*.13,.72,'sine',.085,f*1.08));
+ [262,330,392,523].forEach((f,i)=>tone(f,now+.95+i*.08,.9,'triangle',.065,f*1.5));
+}
 function phoneView(){return window.matchMedia('(max-width:820px)').matches}
 function syncCanvasViewport(){const wrap=$('#canvasWrap'),rect=wrap.getBoundingClientRect();let width=960,height=640;if(phoneView()&&rect.width>0&&rect.height>0)height=Math.max(640,Math.min(1400,Math.round(width*rect.height/rect.width)));if(canvas.width!==width||canvas.height!==height){canvas.width=width;canvas.height=height}}
 function calculateVisualUnit(){if(!phoneView())return 1/viewScale;const rect=canvas.getBoundingClientRect(),displayScale=Math.max(.32,Math.min(rect.width/canvas.width,rect.height/canvas.height));return Math.min(2.35,1/displayScale)/viewScale}
@@ -182,7 +188,27 @@ function autoClub(){if(lie==='GREEN')return;const remaining=remainingMetres();cl
 function resetMeter(){$('#powerFill').style.width='0';$('#powerValue').textContent='0%';$('#accuracyNeedle').style.left='50%';$('#accuracyValue').textContent='READY';$('#swingMain').textContent='SWING';$('#swingHint').textContent='Tap to start power'}
 let toastTimer;function toast(s){const el=$('#toast');el.textContent=s;el.classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>el.classList.remove('show'),1200)}
 function finishHole(){scores[holeIndex]=strokes;playResultSound(strokes-hole.par);showScorecard(false)}
-function showScorecard(viewOnly=false){scorecardViewing=viewOnly;const rel=strokes-hole.par,completed=scores.filter(s=>Number.isFinite(s)).length;if(viewOnly){$('#scoreKicker').textContent='CURRENT SCORECARD';$('#scoreTitle').textContent=completed?`After ${completed} hole${completed===1?'':'s'}`:'Round just started'}else{$('#scoreKicker').textContent=holeIndex===17?'FINAL SCORE':`AFTER HOLE ${holeIndex+1}`;$('#scoreTitle').textContent=rel<=-2?'An eagle!':rel===-1?'Beautiful birdie!':rel===0?'Nice par!':rel===1?'Just a bogey.':rel===2?'Double trouble.':'The ball survived.'}const total=scores.reduce((a,s,i)=>a+s-course[i].par,0);$('#scoreTotal').textContent=formatScore(total);$('#scoreHoles').innerHTML='<th>HOLE</th>'+course.map(h=>`<th>${h.number}</th>`).join('')+'<th>OUT</th><th>IN</th><th>TOT</th>';$('#scorePars').innerHTML='<td>PAR</td>'+course.map(h=>`<td>${h.par}</td>`).join('')+`<td>${course.slice(0,9).reduce((a,h)=>a+h.par,0)}</td><td>${course.slice(9).reduce((a,h)=>a+h.par,0)}</td><td>${course.reduce((a,h)=>a+h.par,0)}</td>`;const cells=course.map((h,i)=>{const s=scores[i];if(!s)return '<td>–</td>';const r=s-h.par,cl=r<=-2?'eagle':r===-1?'birdie':r===0?'par':'bogey';return `<td class="${i===holeIndex?'current':''}"><span class="score-cell ${cl}">${s}</span></td>`}).join('');const sum=a=>a.reduce((x,s)=>x+(s||0),0)||'–';$('#scoreScores').innerHTML=`<td>SCORE</td>${cells}<td>${sum(scores.slice(0,9))}</td><td>${sum(scores.slice(9))}</td><td>${sum(scores)}</td>`;$('#nextHoleBtn').innerHTML=viewOnly?'RETURN TO GAME <span>↩</span>':holeIndex===17?'NEW ROUND <span>↻</span>':'NEXT HOLE <span>→</span>';$('#scoreDialog').showModal()}
+function birdieBlitzComplete(){return course.length===18&&course.every((h,i)=>Number.isFinite(scores[i])&&scores[i]<=h.par-1)}
+function holeResultTitle(relative){return relative<=-4?'A condor!':relative===-3?'An albatross!':relative===-2?'An eagle!':relative===-1?'Beautiful birdie!':relative===0?'Nice par!':relative===1?'Just a bogey.':relative===2?'Double trouble.':'The ball survived.'}
+function setRoundCelebration(active){
+ const banner=$('#roundCelebration'),confetti=$('#celebrationConfetti'),dialog=$('#scoreDialog');
+ banner.classList.toggle('hidden',!active);dialog.classList.toggle('perfect-round',active);
+ confetti.innerHTML=active?Array.from({length:42},(_,i)=>`<i style="--x:${(i*37)%101}%;--delay:${(i%9)*-.16}s;--drift:${(i%7-3)*9}px;--turn:${180+(i%5)*90}deg"></i>`).join(''):'';
+ if(active)playPerfectRoundSound();
+}
+function showScorecard(viewOnly=false){
+ scorecardViewing=viewOnly;
+ const rel=strokes-hole.par,completed=scores.filter(s=>Number.isFinite(s)).length,perfect=!viewOnly&&holeIndex===17&&birdieBlitzComplete();
+ if(viewOnly){$('#scoreKicker').textContent='CURRENT SCORECARD';$('#scoreTitle').textContent=completed?`After ${completed} hole${completed===1?'':'s'}`:'Round just started'}
+ else{$('#scoreKicker').textContent=holeIndex===17?'FINAL SCORE':`AFTER HOLE ${holeIndex+1}`;$('#scoreTitle').textContent=perfect?'Every hole under par!':holeResultTitle(rel)}
+ const total=scores.reduce((a,s,i)=>a+s-course[i].par,0);$('#scoreTotal').textContent=formatScore(total);
+ $('#scoreHoles').innerHTML='<th>HOLE</th>'+course.map(h=>`<th>${h.number}</th>`).join('')+'<th>OUT</th><th>IN</th><th>TOT</th>';
+ $('#scorePars').innerHTML='<td>PAR</td>'+course.map(h=>`<td>${h.par}</td>`).join('')+`<td>${course.slice(0,9).reduce((a,h)=>a+h.par,0)}</td><td>${course.slice(9).reduce((a,h)=>a+h.par,0)}</td><td>${course.reduce((a,h)=>a+h.par,0)}</td>`;
+ const cells=course.map((h,i)=>{const s=scores[i];if(!s)return '<td>–</td>';const r=s-h.par,cl=r<=-3?'albatross':r===-2?'eagle':r===-1?'birdie':r===0?'par':'bogey';return `<td class="${i===holeIndex?'current':''}"><span class="score-cell ${cl}">${s}</span></td>`}).join('');
+ const sum=a=>a.reduce((x,s)=>x+(s||0),0)||'–';$('#scoreScores').innerHTML=`<td>SCORE</td>${cells}<td>${sum(scores.slice(0,9))}</td><td>${sum(scores.slice(9))}</td><td>${sum(scores)}</td>`;
+ $('#nextHoleBtn').innerHTML=viewOnly?'RETURN TO GAME <span>↩</span>':holeIndex===17?'NEW ROUND <span>↻</span>':'NEXT HOLE <span>→</span>';
+ setRoundCelebration(perfect);$('#scoreDialog').showModal();
+}
 
 function changeAim(n){if(phase==='ready'){aim+=n;updateHUD();draw()}}
 function changeClub(n){if(phase!=='ready')return;if(lie==='GREEN')puttMode=Math.max(0,Math.min(2,puttMode+n));else club=Math.max(0,Math.min(12,club+n));updateHUD();draw()}
