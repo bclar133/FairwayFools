@@ -96,18 +96,20 @@ function playResultSound(relative){
  else{noise(now,.55,.045,600);tone(330,now,.65,'sine',.07,185);tone(247,now+.08,.58,'sine',.045,165)}
 }
 function phoneView(){return window.matchMedia('(max-width:820px)').matches}
+function syncCanvasViewport(){const wrap=$('#canvasWrap'),rect=wrap.getBoundingClientRect();let width=960,height=640;if(phoneView()&&rect.width>0&&rect.height>0)height=Math.max(640,Math.min(1400,Math.round(width*rect.height/rect.width)));if(canvas.width!==width||canvas.height!==height){canvas.width=width;canvas.height=height}}
 function calculateVisualUnit(){if(!phoneView())return 1/viewScale;const rect=canvas.getBoundingClientRect(),displayScale=Math.max(.32,Math.min(rect.width/canvas.width,rect.height/canvas.height));return Math.min(2.35,1/displayScale)/viewScale}
 function visualUnit(){return frameVisualUnit}
 function getCamera(){
- const mobile=phoneView();
- if(lie==='GREEN'){if(mobile){const gap=dist(ball,hole.green),scale=Math.min(11,Math.max(8,520/Math.max(45,gap))),focus={x:(ball.x+hole.green.x)/2,y:(ball.y+hole.green.y)/2};return {scale,x:480-focus.x*scale,y:320-focus.y*scale}}const scale=Math.min(9,Math.max(5,340/hole.green.r));return {scale,x:480-hole.green.x*scale,y:320-hole.green.y*scale}}
- if(hole){const remaining=remainingMetres(),range=mobile?180:110,t=Math.max(0,Math.min(1,1-remaining/range)),smooth=t*t*(3-2*t),base=mobile?1.2:1,scale=base+(mobile?2.8:1.9)*smooth,focus={x:(ball.x+hole.green.x)/2,y:(ball.y+hole.green.y)/2},targetX=480-focus.x*scale,targetY=320-focus.y*scale,follow=mobile?1:smooth;if(mobile||t>0)return {scale,x:targetX*follow,y:targetY*follow}}
+ const mobile=phoneView(),cx=canvas.width/2,cy=canvas.height/2;
+ if(lie==='GREEN'){if(mobile){const gap=dist(ball,hole.green),scale=Math.min(6.5,Math.max(4.8,360/Math.max(55,gap))),focus={x:(ball.x+hole.green.x)/2,y:(ball.y+hole.green.y)/2};return {scale,x:cx-focus.x*scale,y:cy-focus.y*scale}}const scale=Math.min(9,Math.max(5,340/hole.green.r));return {scale,x:480-hole.green.x*scale,y:320-hole.green.y*scale}}
+ if(hole&&mobile){const remaining=remainingMetres(),t=Math.max(0,Math.min(1,1-remaining/140)),smooth=t*t*(3-2*t),desired=1+1.4*smooth,len=clubDistance()*shotPixelsPerMetre(),target={x:ball.x+Math.sin(aim)*len,y:ball.y-Math.cos(aim)*len},dx=Math.abs(target.x-ball.x),dy=Math.abs(target.y-ball.y),fitX=canvas.width*.8/Math.max(80,dx+55),fitY=canvas.height*.8/Math.max(80,dy+55),scale=Math.min(desired,Math.max(.82,Math.min(fitX,fitY))),focus={x:(ball.x+target.x)/2,y:(ball.y+target.y)/2};return {scale,x:cx-focus.x*scale,y:cy-focus.y*scale}}
+ if(hole){const remaining=remainingMetres(),t=Math.max(0,Math.min(1,1-remaining/110));if(t>0){const smooth=t*t*(3-2*t),focus={x:(ball.x+hole.green.x)/2,y:(ball.y+hole.green.y)/2},scale=1+1.9*smooth,targetX=480-focus.x*scale,targetY=320-focus.y*scale;return {scale,x:targetX*smooth,y:targetY*smooth}}}
  return {scale:1,x:0,y:0};
 }
 function worldToScreen(p){const c=getCamera();return {x:p.x*c.scale+c.x,y:p.y*c.scale+c.y}}
 function screenToWorld(x,y){const c=getCamera();return {x:(x-c.x)/c.scale,y:(y-c.y)/c.scale}}
 function draw(){
- ctx.clearRect(0,0,960,640);ctx.fillStyle='#266c43';ctx.fillRect(0,0,960,640);
+ syncCanvasViewport();ctx.clearRect(0,0,canvas.width,canvas.height);ctx.fillStyle='#266c43';ctx.fillRect(0,0,canvas.width,canvas.height);
  const camera=getCamera();viewScale=camera.scale;frameVisualUnit=calculateVisualUnit();ctx.save();ctx.translate(camera.x,camera.y);ctx.scale(camera.scale,camera.scale);drawMow();
  hole.waters.forEach(w=>ellipse(w,'#2c9dcc','#63c4e4'));drawFairway();
  hole.bunkers.forEach(b=>ellipse(b,'#ead18e','#f7e5b5'));
@@ -115,7 +117,7 @@ function draw(){
  drawGreen();drawTeeMarkers();drawAim();drawBall();
  ctx.restore();
 }
-function drawMow(){ctx.save();ctx.globalAlpha=.08;for(let y=0;y<640;y+=28){ctx.fillStyle=y%56?'#fff':'#000';ctx.fillRect(0,y,960,28)}ctx.restore()}
+function drawMow(){ctx.save();ctx.globalAlpha=.08;for(let y=-400,i=0;y<1200;y+=28,i++){ctx.fillStyle=i%2?'#fff':'#000';ctx.fillRect(-400,y,1760,28)}ctx.restore()}
 function ellipse(o,fill,shine){ctx.save();ctx.translate(o.x,o.y);ctx.rotate(o.rot||0);ctx.fillStyle=fill;ctx.beginPath();ctx.ellipse(0,0,o.rx,o.ry,0,0,7);ctx.fill();ctx.strokeStyle=shine;ctx.lineWidth=3;ctx.stroke();ctx.restore()}
 function drawFairway(){ctx.lineCap='round';ctx.lineJoin='round';ctx.strokeStyle='#65b95f';ctx.lineWidth=hole.fairWidth+18;ctx.beginPath();hole.centers.forEach((p,i)=>i?ctx.lineTo(p.x,p.y):ctx.moveTo(p.x,p.y));ctx.stroke();ctx.strokeStyle='#83ce72';ctx.lineWidth=hole.fairWidth;ctx.stroke();ctx.setLineDash([12,16]);ctx.strokeStyle='rgba(255,255,255,.09)';ctx.lineWidth=hole.fairWidth*.75;ctx.stroke();ctx.setLineDash([])}
 function visibleTrees(){return hole.trees.filter(t=>!onFairway(t.x,t.y)&&dist(t,hole.green)>hole.green.r+12)}
@@ -185,7 +187,7 @@ function changeClub(n){if(phase!=='ready')return;if(lie==='GREEN')puttMode=Math.
 $('#startBtn').onclick=startRound;$('#swingBtn').onclick=swing;$('#aimLeft').onclick=()=>changeAim(-.06);$('#aimRight').onclick=()=>changeAim(.06);$('#clubDown').onclick=()=>changeClub(-1);$('#clubUp').onclick=()=>changeClub(1);$('#scorecardBtn').onclick=()=>{if(!shotAnimating&&phase==='ready')showScorecard(true)};$('#menuBtn').onclick=()=>{if(confirm('Leave this round and return to golfer select?')){$('#game').classList.add('hidden');$('#setup').classList.remove('hidden')}};$('#nextHoleBtn').onclick=()=>{$('#scoreDialog').close();if(scorecardViewing){scorecardViewing=false;return}if(holeIndex===17){$('#game').classList.add('hidden');$('#setup').classList.remove('hidden')}else{holeIndex++;loadHole()}};
 document.addEventListener('keydown',e=>{if($('#game').classList.contains('hidden'))return;if(e.code==='Space'){e.preventDefault();swing()}if(['ArrowLeft','KeyA'].includes(e.code))changeAim(-.045);if(['ArrowRight','KeyD'].includes(e.code))changeAim(.045);if(e.code==='ArrowUp')changeClub(-1);if(e.code==='ArrowDown')changeClub(1)});
 let pointerAiming=false;
-function aimAtPointer(e){if(phase!=='ready')return;const rect=canvas.getBoundingClientRect(),sx=(e.clientX-rect.left)*960/rect.width,sy=(e.clientY-rect.top)*640/rect.height,p=screenToWorld(sx,sy);aim=Math.atan2(p.x-ball.x,ball.y-p.y);updateHUD();draw()}
+function aimAtPointer(e){if(phase!=='ready')return;const rect=canvas.getBoundingClientRect(),sx=(e.clientX-rect.left)*canvas.width/rect.width,sy=(e.clientY-rect.top)*canvas.height/rect.height,p=screenToWorld(sx,sy);aim=Math.atan2(p.x-ball.x,ball.y-p.y);updateHUD();draw()}
 canvas.addEventListener('pointerdown',e=>{if(phase!=='ready')return;pointerAiming=true;canvas.setPointerCapture(e.pointerId);aimAtPointer(e)});
 canvas.addEventListener('pointermove',e=>{if(pointerAiming)aimAtPointer(e)});
 canvas.addEventListener('pointerup',e=>{pointerAiming=false;canvas.releasePointerCapture(e.pointerId)});
