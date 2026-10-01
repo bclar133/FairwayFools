@@ -15,6 +15,7 @@
       <header class="masthead">
         <div class="flag-mark"><span></span></div>
         <div><p class="eyebrow">18 holes. Questionable talent.</p><h1>FAIRWAY <em>FOOLS</em></h1><p class="game-goal">One goal: birdie every hole.</p></div>
+        <a class="home-screen-link" href="https://www.brent-clark.com/" aria-label="Visit Brent Clark Games">BRENT-CLARK.COM <span>↗</span></a>
       </header>
 
       <div class="setup-grid">
@@ -31,7 +32,6 @@
             <div><strong>Fresh course every round</strong><p>18 playable holes generated from balanced par, distance and hazard rules.</p></div>
           </div>
           <button id="startBtn" class="primary-btn">TEE OFF <span>→</span></button>
-          <a class="site-home-link" href="https://www.brent-clark.com/" aria-label="Back to Brent Clark Games">← Back to Brent Clark Games</a>
         </section>
       </div>
       <footer><span>Desktop: mouse or ← → + Space</span><span>Phone: aim buttons + SWING</span></footer>
@@ -77,6 +77,17 @@
       <div class="score-scroll"><table><thead><tr id="scoreHoles"></tr></thead><tbody><tr id="scorePars"></tr><tr id="scoreScores"></tr></tbody></table></div>
       <div class="score-legend"><span><i class="albatross"></i>Albatross</span><span><i class="eagle"></i>Eagle</span><span><i class="birdie"></i>Birdie</span><span><i class="par"></i>Par</span><span><i class="bogey"></i>Bogey+</span></div>
       <button id="nextHoleBtn" class="primary-btn">NEXT HOLE <span>→</span></button>
+    </dialog>
+
+    <dialog id="leaveDialog" class="leave-dialog">
+      <div class="leave-flag" aria-hidden="true"><i></i></div>
+      <p class="leave-kicker">CALL IT A DAY?</p>
+      <h2>Leave this round?</h2>
+      <p>Your scorecard and this freshly generated course will be lost.</p>
+      <div class="leave-actions">
+        <button id="keepPlayingBtn" class="keep-playing-btn" type="button">KEEP PLAYING</button>
+        <button id="leaveRoundBtn" class="leave-round-btn" type="button">LEAVE ROUND</button>
+      </div>
     </dialog>
   </main>
   <script src="game.js"></script>
