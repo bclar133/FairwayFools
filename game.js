@@ -158,7 +158,7 @@ function hitBall(){
  const slopeX=Math.cos(hole.slope.angle)*slopeFactor,slopeY=Math.sin(hole.slope.angle)*slopeFactor;
  let tx=baseTx+windX+slopeX,ty=baseTy+windY+slopeY;
  if(isPutt){
-  const target={x:tx,y:ty},pass=pathNearPoint(hole.green,start,target),overshoot=dist(target,hole.green),cupRadius=4;
+  const target={x:tx,y:ty},pass=pathNearPoint(hole.green,start,target),overshoot=dist(target,hole.green),cupRadius=Math.max(.24,Math.min(1.1,5.2/Math.max(1,viewScale)));
   if(pass.t>.03&&pass.t<.99&&pass.distance<cupRadius){
    const lineQuality=1-pass.distance/cupRadius,tooHard=overshoot>hole.green.r*.75,paceQuality=Math.max(0,1-overshoot/(hole.green.r*.9));
    const sinkChance=tooHard?.06:.48+.48*lineQuality*paceQuality;
@@ -182,7 +182,7 @@ function hitBall(){
  requestAnimationFrame(flight)
 }
 function rollIntoCup(){const start={...ball},g=hole.green,started=performance.now(),duration=Math.max(260,Math.min(480,dist(start,g)*90));shotAnimating=true;function frame(now){const t=Math.min(1,(now-started)/duration),ease=t*t*(3-2*t);ball.x=start.x+(g.x-start.x)*ease;ball.y=start.y+(g.y-start.y)*ease;draw();if(t<1)requestAnimationFrame(frame);else{ball={x:g.x,y:g.y};draw();setTimeout(()=>{shotAnimating=false;ballInCup=true;draw();toast(pendingCupMessage||'HOLED OUT!');setTimeout(finishHole,650)},140)}}requestAnimationFrame(frame)}
-function landBall(previous){shotAnimating=false;const g=hole.green;if(dist(ball,g)<3.4){rollIntoCup();return}if(pointInGreen(ball.x,ball.y)){lie='GREEN';club=13;const remaining=remainingMetres();puttMode=remaining<4.5?0:remaining<10.5?1:2;toast(pendingCupMessage||'ON THE GREEN')}else if(hole.bunkers.some(b=>pointInEllipse(ball,b))){lie='BUNKER';toast('BEACH DAY')}else if(onFairway(ball.x,ball.y)){lie='FAIRWAY';toast('FAIRWAY FOUND')}else if(hole.waters.some(w=>pointInEllipse(ball,w))){ball=previous;strokes++;toast('SPLASH! +1 PENALTY')}else{lie='ROUGH';toast('IN THE ROUGH')}pendingCupMessage='';phase='ready';power=0;accuracy=0;resetMeter();autoClub();aimAtHole();updateHUD();draw()}
+function landBall(previous){shotAnimating=false;const g=hole.green,settledDistance=dist(ball,g),confirmedDrop=pendingCupMessage==='DROPPED!'&&settledDistance<.8,naturalDrop=settledDistance<Math.max(.22,Math.min(.9,4.2/Math.max(1,viewScale)));if(confirmedDrop||naturalDrop){rollIntoCup();return}if(pointInGreen(ball.x,ball.y)){lie='GREEN';club=13;const remaining=remainingMetres();puttMode=remaining<4.5?0:remaining<10.5?1:2;toast(pendingCupMessage||'ON THE GREEN')}else if(hole.bunkers.some(b=>pointInEllipse(ball,b))){lie='BUNKER';toast('BEACH DAY')}else if(onFairway(ball.x,ball.y)){lie='FAIRWAY';toast('FAIRWAY FOUND')}else if(hole.waters.some(w=>pointInEllipse(ball,w))){ball=previous;strokes++;toast('SPLASH! +1 PENALTY')}else{lie='ROUGH';toast('IN THE ROUGH')}pendingCupMessage='';phase='ready';power=0;accuracy=0;resetMeter();autoClub();aimAtHole();updateHUD();draw()}
 function pointInEllipse(p,e){const c=Math.cos(-(e.rot||0)),s=Math.sin(-(e.rot||0)),dx=p.x-e.x,dy=p.y-e.y,x=dx*c-dy*s,y=dx*s+dy*c;return x*x/e.rx**2+y*y/e.ry**2<=1}
 function autoClub(){if(lie==='GREEN')return;const remaining=remainingMetres();club=0;for(let i=12;i>=0;i--){if(clubDistanceFor(i)>=remaining){club=i;break}}}
 function resetMeter(){$('#powerFill').style.width='0';$('#powerValue').textContent='0%';$('#accuracyNeedle').style.left='50%';$('#accuracyValue').textContent='READY';$('#swingMain').textContent='SWING';$('#swingHint').textContent='Tap to start power'}

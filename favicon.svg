@@ -1,9 +1,11 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
-  <rect width="64" height="64" rx="14" fill="#123c2d"/>
-  <path d="M12 54c7-12 9-25 20-35 7-7 16-8 21-4 6 5 1 13-4 18-7 7-7 16-4 21z" fill="#6fc55f"/>
-  <ellipse cx="42" cy="19" rx="13" ry="9" fill="#a7e77d"/>
-  <path d="M41 29V11" stroke="#fff" stroke-width="2.5" stroke-linecap="round"/>
-  <path d="m42 11 12 4-12 5z" fill="#f04f3f"/>
-  <ellipse cx="41" cy="27.5" rx="4" ry="1.8" fill="#123c2d"/>
-  <circle cx="22" cy="47" r="3.4" fill="#fff"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
+  <title id="title">Fairway Fools</title>
+  <desc id="desc">A geometric FF golf flag emblem</desc>
+  <rect x="16" y="16" width="480" height="480" rx="96" fill="#6fc55f"/>
+  <path d="M256 48 464 256 256 464 48 256Z" fill="#123c2d" stroke="#f7f1d5" stroke-width="18" stroke-linejoin="round"/>
+  <path d="M130 190h110v42h-62v34h52v40h-52v82h-48Z" fill="#f7f1d5"/>
+  <path d="M274 190h110v42h-62v34h52v40h-52v82h-48Z" fill="#6fc55f"/>
+  <rect x="246" y="118" width="20" height="282" rx="10" fill="#f7f1d5"/>
+  <path d="M266 133c43 8 54 37 98 44-25 31-60 38-98 31Z" fill="#f5c64d"/>
+  <ellipse cx="256" cy="399" rx="42" ry="16" fill="#123c2d" stroke="#f7f1d5" stroke-width="12"/>
 </svg>
