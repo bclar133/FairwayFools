@@ -16,7 +16,8 @@ const clubs=[
  ['Pitching Wedge',115,'wedge'],['Sand Wedge',90,'wedge'],['Lob Wedge',70,'wedge'],['Putter',24,'putter']
 ];
 const puttModes=[['Short Putt',5],['Medium Putt',11],['Long Putt',24]];
-let selectedGolfer=3,selectedDifficulty='medium',course=[],holeIndex=0,strokes=0,scores=[],ball={x:480,y:585},aim=0,club=0,puttMode=1,phase='ready',power=0,accuracy=0,meterDir=1,animFrame,lastTime=0,hole,lie='TEE',shotAnimating=false,viewScale=1,frameVisualUnit=1,pendingCupMessage='',golferSwingPose=0,ballInCup=false,audioCtx=null,scorecardViewing=false;
+const shortGameShots=[['Chip Shot',24],['Pitch Shot',60]];
+let selectedGolfer=3,selectedDifficulty='medium',course=[],holeIndex=0,strokes=0,scores=[],ball={x:480,y:585},aim=0,club=0,puttMode=1,shortGameMode=0,phase='ready',power=0,accuracy=0,meterDir=1,animFrame,lastTime=0,hole,lie='TEE',shotAnimating=false,viewScale=1,frameVisualUnit=1,pendingCupMessage='',golferSwingPose=0,ballInCup=false,audioCtx=null,scorecardViewing=false;
 
 function renderSetup(){
  $('#golferGrid').innerHTML=golfers.map((g,i)=>`<button class="golfer-card ${i===selectedGolfer?'selected':''}" role="radio" aria-checked="${i===selectedGolfer}" data-golfer="${i}"><div class="portrait" style="background-image:url('assets/${portraitFiles[i]}')"></div><div class="golfer-info"><small>${g.role}</small><h3>${g.name}</h3>${statRow('POWER',g.stats.power)}${statRow('CONTROL',g.stats.accuracy)}${statRow('SHORT',g.stats.short)}</div></button>`).join('');
@@ -49,14 +50,16 @@ function generateCourse(){
 }
 function startRound(){course=generateCourse();scores=[];holeIndex=0;$('#setup').classList.add('hidden');$('#game').classList.remove('hidden');const g=golfers[selectedGolfer];$('#golferName').textContent=g.name;$('#golferRole').textContent=g.role;$('#miniPortrait').style.backgroundImage=`url('assets/${portraitFiles[selectedGolfer]}')`;loadHole()}
 function aimAtHole(){aim=Math.atan2(hole.green.x-ball.x,ball.y-hole.green.y)}
-function loadHole(){hole=course[holeIndex];ball={...hole.tee};strokes=0;lie='TEE';ballInCup=false;aimAtHole();club=0;puttMode=1;phase='ready';power=0;accuracy=0;autoClub();updateHUD();draw()}
+function loadHole(){hole=course[holeIndex];ball={...hole.tee};strokes=0;lie='TEE';ballInCup=false;aimAtHole();club=0;puttMode=1;shortGameMode=0;phase='ready';power=0;accuracy=0;autoClub();updateHUD();draw()}
 function updateHUD(){
  $('#holeLabel').textContent=`HOLE ${holeIndex+1}`;$('#parLabel').textContent=`PAR ${hole.par}`;$('#yardLabel').textContent=`${hole.length} M`;$('#shotCount').textContent=strokes+1;$('#lieBadge').textContent=lie;
  const total=scores.reduce((a,s,i)=>a+s-course[i].par,0);$('#roundScore').textContent=formatScore(total);
  $('#windLabel').textContent=`${hole.wind.speed} mph`;$('#windArrow').style.transform=`rotate(${hole.wind.angle}rad)`;
- $('#clubLabel').textContent=(lie==='GREEN'?puttModes[puttMode][0]:clubs[club][0]).toUpperCase();$('#distanceLabel').textContent=lie==='GREEN'?`${clubDistance().toFixed(1)} m max`:`${Math.round(clubDistance())} m max`;$('#aimDegrees').textContent=`${Math.round(aim*180/Math.PI)}°`;
+ const shortGame=isShortGameRange(),shotLabel=lie==='GREEN'?puttModes[puttMode][0]:shortGame?shortGameShots[shortGameMode][0]:clubs[club][0];
+ $('#clubLabel').textContent=shotLabel.toUpperCase();$('#distanceLabel').textContent=lie==='GREEN'||shortGame?`${clubDistance().toFixed(1)} m max`:`${Math.round(clubDistance())} m max`;$('#lieBadge').textContent=shortGame?`${lie} • SHORT GAME`:lie;$('#aimDegrees').textContent=`${Math.round(aim*180/Math.PI)}°`;
 }
-function clubDistanceFor(index,lieName=lie){const g=golfers[selectedGolfer];if(lieName==='GREEN'||index===13)return puttModes[puttMode][1];const family=clubs[index][2];let factor=family==='wood'?.84+g.stats.power*.045:family==='iron'?.88+g.stats.power*.03:.9+g.stats.short*.025,n=clubs[index][1]*factor;if(lieName==='ROUGH')n*=.82;if(lieName==='BUNKER')n*=.62;return n}
+function shortGameDistanceFor(mode,lieName=lie){const g=golfers[selectedGolfer];let n=shortGameShots[mode][1]*(.9+g.stats.short*.025);if(lieName==='ROUGH')n*=.82;if(lieName==='BUNKER')n*=.62;return n}
+function clubDistanceFor(index,lieName=lie){const g=golfers[selectedGolfer];if(lieName==='GREEN'||index===13)return puttModes[puttMode][1];if(isShortGameRange())return shortGameDistanceFor(shortGameMode,lieName);const family=clubs[index][2];let factor=family==='wood'?.84+g.stats.power*.045:family==='iron'?.88+g.stats.power*.03:.9+g.stats.short*.025,n=clubs[index][1]*factor;if(lieName==='ROUGH')n*=.82;if(lieName==='BUNKER')n*=.62;return n}
 function clubDistance(){return clubDistanceFor(club)}
 function formatScore(n){return n===0?'E':n>0?`+${n}`:`${n}`}
 function pixelsPerMetre(){return (hole.tee.y-hole.green.y)/hole.length}
@@ -64,6 +67,8 @@ function greenRadiusPixels(){return Math.max(...hole.green.points.map(p=>dist(p,
 function puttPixelsPerMetre(){return greenRadiusPixels()/16}
 function shotPixelsPerMetre(){return lie==='GREEN'?puttPixelsPerMetre():pixelsPerMetre()}
 function remainingMetres(){return dist(ball,hole.green)/(lie==='GREEN'?puttPixelsPerMetre():pixelsPerMetre())}
+function distanceFromGreenMetres(){return pointInGreen(ball.x,ball.y)?0:greenEdgeDistance(ball.x,ball.y)/pixelsPerMetre()}
+function isShortGameRange(){return !!hole&&lie!=='GREEN'&&distanceFromGreenMetres()<=10}
 function pointInGreen(x,y){
  const pts=hole.green.points;let inside=false;
  for(let i=0,j=pts.length-1;i<pts.length;j=i++){
@@ -146,13 +151,13 @@ function animateGolferSwing(){const started=performance.now(),duration=620;funct
 function animateMeters(t=0){if(phase==='ready'||phase==='flight')return;const dt=Math.min(30,t-lastTime||16);lastTime=t;if(phase==='power'){power+=meterDir*dt*.085;if(power>=100||power<=0){meterDir*=-1;power=Math.max(0,Math.min(100,power))}$('#powerFill').style.width=`${power}%`;$('#powerValue').textContent=`${Math.round(power)}%`}else{accuracy+=meterDir*dt*.13;if(accuracy>=100||accuracy<=-100){meterDir*=-1;accuracy=Math.max(-100,Math.min(100,accuracy))}$('#accuracyNeedle').style.left=`${50+accuracy*.5}%`;$('#accuracyValue').textContent=Math.abs(accuracy)<12?'PERFECT':Math.abs(accuracy)<38?'GOOD':'MISS'}animFrame=requestAnimationFrame(animateMeters)}
 function hitBall(){
  cancelAnimationFrame(animFrame);shotAnimating=true;ballInCup=false;strokes++;pendingCupMessage='';
- const g=golfers[selectedGolfer],isPutt=lie==='GREEN',start={...ball};
- playShotSound(isPutt||remainingMetres()<=20||club>=5?'chip':club<=1?'drive':'approach');
- const strength=isPutt?.05+.95*power/100:.42+.58*power/100;
+ const g=golfers[selectedGolfer],isPutt=lie==='GREEN',isShortGame=isShortGameRange(),start={...ball};
+ playShotSound(isPutt||isShortGame||remainingMetres()<=20||club>=5?'chip':club<=1?'drive':'approach');
+ const strength=isPutt?.05+.95*power/100:isShortGame?.08+.92*power/100:.42+.58*power/100;
  const shotMetres=clubDistance()*strength,d=shotMetres*shotPixelsPerMetre();
- const control=isPutt?g.stats.short:g.stats.accuracy,miss=accuracy*(1.15-control*.13),angle=aim+miss*Math.PI/450;
+ const control=isPutt||isShortGame?g.stats.short:g.stats.accuracy,miss=accuracy*(1.15-control*.13),angle=aim+miss*Math.PI/450;
  const baseTx=ball.x+Math.sin(angle)*d,baseTy=ball.y-Math.cos(angle)*d;
- const windFactor=isPutt?0:hole.wind.speed*(.75+d/140)*(1-control*.045);
+ const windFactor=isPutt?0:isShortGame?hole.wind.speed*.08:hole.wind.speed*(.75+d/140)*(1-control*.045);
  const windX=Math.cos(hole.wind.angle)*windFactor,windY=Math.sin(hole.wind.angle)*windFactor;
  const slopeFactor=isPutt?d*Math.min(.3,hole.slope.strength*.38):0;
  const slopeX=Math.cos(hole.slope.angle)*slopeFactor,slopeY=Math.sin(hole.slope.angle)*slopeFactor;
@@ -184,7 +189,7 @@ function hitBall(){
 function rollIntoCup(){const start={...ball},g=hole.green,started=performance.now(),duration=Math.max(260,Math.min(480,dist(start,g)*90));shotAnimating=true;function frame(now){const t=Math.min(1,(now-started)/duration),ease=t*t*(3-2*t);ball.x=start.x+(g.x-start.x)*ease;ball.y=start.y+(g.y-start.y)*ease;draw();if(t<1)requestAnimationFrame(frame);else{ball={x:g.x,y:g.y};draw();setTimeout(()=>{shotAnimating=false;ballInCup=true;draw();toast(pendingCupMessage||'HOLED OUT!');setTimeout(finishHole,650)},140)}}requestAnimationFrame(frame)}
 function landBall(previous){shotAnimating=false;const g=hole.green,settledDistance=dist(ball,g),confirmedDrop=pendingCupMessage==='DROPPED!'&&settledDistance<.8,naturalDrop=settledDistance<Math.max(.22,Math.min(.9,4.2/Math.max(1,viewScale)));if(confirmedDrop||naturalDrop){rollIntoCup();return}if(pointInGreen(ball.x,ball.y)){lie='GREEN';club=13;const remaining=remainingMetres();puttMode=remaining<4.5?0:remaining<10.5?1:2;toast(pendingCupMessage||'ON THE GREEN')}else if(hole.bunkers.some(b=>pointInEllipse(ball,b))){lie='BUNKER';toast('BEACH DAY')}else if(onFairway(ball.x,ball.y)){lie='FAIRWAY';toast('FAIRWAY FOUND')}else if(hole.waters.some(w=>pointInEllipse(ball,w))){ball=previous;strokes++;toast('SPLASH! +1 PENALTY')}else{lie='ROUGH';toast('IN THE ROUGH')}pendingCupMessage='';phase='ready';power=0;accuracy=0;resetMeter();autoClub();aimAtHole();updateHUD();draw()}
 function pointInEllipse(p,e){const c=Math.cos(-(e.rot||0)),s=Math.sin(-(e.rot||0)),dx=p.x-e.x,dy=p.y-e.y,x=dx*c-dy*s,y=dx*s+dy*c;return x*x/e.rx**2+y*y/e.ry**2<=1}
-function autoClub(){if(lie==='GREEN')return;const remaining=remainingMetres();club=0;for(let i=12;i>=0;i--){if(clubDistanceFor(i)>=remaining){club=i;break}}}
+function autoClub(){if(lie==='GREEN')return;const remaining=remainingMetres();if(isShortGameRange()){shortGameMode=remaining<=shortGameDistanceFor(0)*.92?0:1;club=12;return}club=0;for(let i=12;i>=0;i--){if(clubDistanceFor(i)>=remaining){club=i;break}}}
 function resetMeter(){$('#powerFill').style.width='0';$('#powerValue').textContent='0%';$('#accuracyNeedle').style.left='50%';$('#accuracyValue').textContent='READY';$('#swingMain').textContent='SWING';$('#swingHint').textContent='Tap to start power'}
 let toastTimer;function toast(s){const el=$('#toast');el.textContent=s;el.classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>el.classList.remove('show'),1200)}
 function finishHole(){scores[holeIndex]=strokes;playResultSound(strokes-hole.par);showScorecard(false)}
@@ -211,7 +216,7 @@ function showScorecard(viewOnly=false){
 }
 
 function changeAim(n){if(phase==='ready'){aim+=n;updateHUD();draw()}}
-function changeClub(n){if(phase!=='ready')return;if(lie==='GREEN')puttMode=Math.max(0,Math.min(2,puttMode+n));else club=Math.max(0,Math.min(12,club+n));updateHUD();draw()}
+function changeClub(n){if(phase!=='ready')return;if(lie==='GREEN')puttMode=Math.max(0,Math.min(2,puttMode+n));else if(isShortGameRange())shortGameMode=Math.max(0,Math.min(1,shortGameMode+n));else club=Math.max(0,Math.min(12,club+n));updateHUD();draw()}
 $('#startBtn').onclick=startRound;$('#swingBtn').onclick=swing;$('#aimLeft').onclick=()=>changeAim(-.06);$('#aimRight').onclick=()=>changeAim(.06);$('#clubDown').onclick=()=>changeClub(-1);$('#clubUp').onclick=()=>changeClub(1);$('#scorecardBtn').onclick=()=>{if(!shotAnimating&&phase==='ready')showScorecard(true)};$('#menuBtn').onclick=()=>{$('#leaveDialog').showModal()};$('#keepPlayingBtn').onclick=()=>{$('#leaveDialog').close()};$('#leaveRoundBtn').onclick=()=>{$('#leaveDialog').close();$('#game').classList.add('hidden');$('#setup').classList.remove('hidden')};$('#nextHoleBtn').onclick=()=>{$('#scoreDialog').close();if(scorecardViewing){scorecardViewing=false;return}if(holeIndex===17){$('#game').classList.add('hidden');$('#setup').classList.remove('hidden')}else{holeIndex++;loadHole()}};
 document.addEventListener('keydown',e=>{if($('#game').classList.contains('hidden'))return;if(e.code==='Space'){e.preventDefault();swing()}if(['ArrowLeft','KeyA'].includes(e.code))changeAim(-.045);if(['ArrowRight','KeyD'].includes(e.code))changeAim(.045);if(e.code==='ArrowUp')changeClub(-1);if(e.code==='ArrowDown')changeClub(1)});
 let pointerAiming=false;
